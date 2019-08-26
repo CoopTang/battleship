@@ -137,6 +137,34 @@ class BoardTest < MiniTest::Test
     assert_equal @cruiser, @board.cells["A3"].ship
   end
 
+  def test_generate_valid_horizontal_coordinates
+    keys = @board.cells.keys
+    assert_equal ["A1", "A2", "A3"], @board.generate_horizontal_coordinates(keys, ["A1", "A2", "A3"])
+    assert_equal ["A1", "A2"], @board.generate_horizontal_coordinates(keys, ["A1", "B2"])
+    assert_equal ["D1", "D2", "D3", "D4"], @board.generate_horizontal_coordinates(keys, ["D1", "val", "doesn't", "matter"])
+  end
+
+  def test_generate_invalid_horizontal_coordinates
+    keys = @board.cells.keys
+    assert_equal [], @board.generate_horizontal_coordinates(keys, ["A3", "A4", "A5"])
+    assert_equal [], @board.generate_horizontal_coordinates(keys, ["D3", "B4", "B5"])
+    assert_equal [], @board.generate_horizontal_coordinates(keys, ["C2", "value", "doesn't", "matter"])
+  end
+
+  def test_generate_valid_vertical_coordinates
+    keys = @board.cells.keys
+    assert_equal ["A1", "B1", "C1"], @board.generate_vertical_coordinates(keys, ["A1", "B1", "C1"])
+    assert_equal ["A2", "B2"], @board.generate_vertical_coordinates(keys, ["A2", "D2"])
+    assert_equal ["A1", "B1", "C1", "D1"], @board.generate_vertical_coordinates(keys, ["A1", "val", "doesn't", "matter"])
+  end
+
+  def test_generate_invalid_vertical_coordinates
+    keys = @board.cells.keys
+    assert_equal [], @board.generate_horizontal_coordinates(keys, ["A3", "A4", "A5"])
+    assert_equal [], @board.generate_horizontal_coordinates(keys, ["D3", "B4", "B5"])
+    assert_equal [], @board.generate_horizontal_coordinates(keys, ["C2", "value", "doesn't", "matter"])
+  end
+
 
   def test_render
     @board.place(@cruiser, ["A1","A2","A3"])
