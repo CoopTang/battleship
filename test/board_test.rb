@@ -71,21 +71,25 @@ class BoardTest < MiniTest::Test
     assert_equal "AAAB", @board.calculate_alphabetical_coordinate(18280)
   end
 
-
-  def test_it_has_cells_hash
-    assert_instance_of Hash, @board.cells
-  end
-
-  def test_valid_coordinate?
+  def test_coordinate_is_valid
     assert_equal true, @board.valid_coordinate?("A1")
+  end
+  
+  def test_coordinate_is_invalid
     assert_equal false, @board.valid_coordinate?("E1")
   end
 
-  def test_valid_placement_is_true
+  def test_valid_placement
     assert_equal true, @board.valid_placement?(@submarine, ["A1", "B1"])
     assert_equal true, @board.valid_placement?(@cruiser, ["A1", "A2", "A3"])
     assert_equal true, @board.valid_placement?(@submarine, ["D3", "D4"])
     assert_equal true, @board.valid_placement?(@submarine, ["C3", "D3"])
+  end
+
+  def test_invalid_placement
+    assert_equal false, @board.valid_placement?(@submarine, ["A1", "D1"])
+    assert_equal false, @board.valid_placement?(@submarine, ["A1", "A2", "A3"])
+    assert_equal false, @board.valid_placement?(@submarine, ["A3", "D4"])
   end
 
   def test_valid_placement_coordinate_and_ship_length_must_match
@@ -120,6 +124,37 @@ class BoardTest < MiniTest::Test
     assert_equal false, @board.across_or_down?(["A3", "A2", "A1"])
   end
 
+  def test_generate_valid_horizontal_coordinates
+    assert_equal ["A1", "A2", "A3"], @board.generate_horizontal_coordinates(["A1", "A2", "A3"], 3)
+    assert_equal ["A1", "A2"], @board.generate_horizontal_coordinates(["A1", "B2"], 2)
+    assert_equal ["D1", "D2", "D3", "D4"], @board.generate_horizontal_coordinates(["D1", "val", "doesn't", "matter"], 4)
+  end
+
+  def test_generate_invalid_horizontal_coordinates
+    assert_equal [], @board.generate_horizontal_coordinates(["A3", "A4", "A5"], 3)
+    assert_equal [], @board.generate_horizontal_coordinates(["D3", "B4", "B5"], 3)
+    assert_equal [], @board.generate_horizontal_coordinates(["C2", "value", "doesn't", "matter"], 4)
+  end
+
+  def test_generate_valid_vertical_coordinates
+    assert_equal ["A1", "B1", "C1"], @board.generate_vertical_coordinates(["A1", "B1", "C1"], 3)
+    assert_equal ["A2", "B2"], @board.generate_vertical_coordinates(["A2", "D2"], 2)
+    assert_equal ["A1", "B1", "C1", "D1"], @board.generate_vertical_coordinates(["A1", "val", "doesn't", "matter"], 4)
+  end
+
+  def test_generate_invalid_vertical_coordinates
+    assert_equal [], @board.generate_horizontal_coordinates(["A3", "A4", "A5"], 3)
+    assert_equal [], @board.generate_horizontal_coordinates(["D3", "B4", "B5"], 3)
+    assert_equal [], @board.generate_horizontal_coordinates(["C2", "value", "doesn't", "matter"], 4)
+  end
+
+  def test_generate_valid_coordinate_pairs
+    assert_equal [["A1", "A2", "A3"], ["A1", "B1", "C1"]], @board.generate_valid_coordinates(["A1", "A2", "A3"], 3)
+    assert_equal [["D1", "D2", "D3", "D4"], []], @board.generate_valid_coordinates(["D1", "val", "doesn't", "matter"], 4)
+    assert_equal [[], ["C4", "D4"]], @board.generate_valid_coordinates(["C4", "D2"], 2)
+    assert_equal [[], []], @board.generate_valid_coordinates(["C3", "A4", "A5"], 3)
+  end
+
   def test_valid_placement_cannot_overlap_ships
     @board.cells["D2"].place_ship(@submarine)
     assert_equal false, @board.valid_placement?(@cruiser, ["B2", "C2", "D2"])
@@ -137,35 +172,6 @@ class BoardTest < MiniTest::Test
     assert_equal @cruiser, @board.cells["A3"].ship
   end
 
-  def test_generate_valid_horizontal_coordinates
-    keys = @board.cells.keys
-    assert_equal ["A1", "A2", "A3"], @board.generate_horizontal_coordinates(keys, ["A1", "A2", "A3"])
-    assert_equal ["A1", "A2"], @board.generate_horizontal_coordinates(keys, ["A1", "B2"])
-    assert_equal ["D1", "D2", "D3", "D4"], @board.generate_horizontal_coordinates(keys, ["D1", "val", "doesn't", "matter"])
-  end
-
-  def test_generate_invalid_horizontal_coordinates
-    keys = @board.cells.keys
-    assert_equal [], @board.generate_horizontal_coordinates(keys, ["A3", "A4", "A5"])
-    assert_equal [], @board.generate_horizontal_coordinates(keys, ["D3", "B4", "B5"])
-    assert_equal [], @board.generate_horizontal_coordinates(keys, ["C2", "value", "doesn't", "matter"])
-  end
-
-  def test_generate_valid_vertical_coordinates
-    keys = @board.cells.keys
-    assert_equal ["A1", "B1", "C1"], @board.generate_vertical_coordinates(keys, ["A1", "B1", "C1"])
-    assert_equal ["A2", "B2"], @board.generate_vertical_coordinates(keys, ["A2", "D2"])
-    assert_equal ["A1", "B1", "C1", "D1"], @board.generate_vertical_coordinates(keys, ["A1", "val", "doesn't", "matter"])
-  end
-
-  def test_generate_invalid_vertical_coordinates
-    keys = @board.cells.keys
-    assert_equal [], @board.generate_horizontal_coordinates(keys, ["A3", "A4", "A5"])
-    assert_equal [], @board.generate_horizontal_coordinates(keys, ["D3", "B4", "B5"])
-    assert_equal [], @board.generate_horizontal_coordinates(keys, ["C2", "value", "doesn't", "matter"])
-  end
-
-
   def test_render
     @board.place(@cruiser, ["A1","A2","A3"])
     assert_equal "  1 2 3 4 \nA . . . . \nB . . . . \nC . . . . \nD . . . . \n", @board.render
@@ -182,6 +188,47 @@ class BoardTest < MiniTest::Test
     @board.place(@submarine, ["C2", "D2"])
     assert_equal "  1 2 3 4 \nA X X X . \nB . M . . \nC . . . . \nD . . . . \n", @board.render
     assert_equal "  1 2 3 4 \nA X X X . \nB . M . . \nC . S . . \nD . S . . \n", @board.render(true)
+  end
+
+  def test_constructs_a_rendered_row
+    columns = 1..@board.columns
+    @board.cells["C3"].place_ship(@cruiser)
+    assert_equal "A . . . . ", @board.construct_row_render(1, columns, 1, false)
+    assert_equal "B . . . . ", @board.construct_row_render(2, columns, 1, false)
+    assert_equal "C . . S . ", @board.construct_row_render(3, columns, 1, true)
+  end
+
+  def test_ship_and_coordinates_are_same_length
+    assert_equal true, @board.same_length?(@cruiser, ["A1", "A2", "A3"])
+  end
+
+  def test_ship_and_coordinates_are_not_same_length
+    assert_equal false, @board.same_length?(@cruiser, ["A1", "A2"])
+  end
+
+  def test_all_coordinates_exist
+    assert_equal true, @board.all_valid_coordinates?(["A1", "A2", "A3"])
+  end
+
+  def test_at_least_one_coordinate_does_not_exist
+    assert_equal false, @board.all_valid_coordinates?(["D10", "A4"])
+  end
+
+  def test_all_cells_empty
+    assert_equal true, @board.all_empty?(["A1", "A2", "A3"])
+  end
+
+  def test_at_least_one_cell_is_occupied
+    @board.cells["A1"].place_ship(@cruiser)
+    assert_equal false, @board.all_empty?(["A1", "A2", "A3"])
+  end
+
+  def test_custom_board_size
+    board = Board.new(10, 52)
+    board_2 = Board.new(52, 10)
+
+    assert_equal 520, board.cells.length
+    assert_equal 520, board_2.cells.length
   end
 
 end
